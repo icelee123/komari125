@@ -11,7 +11,6 @@
 - 服务端与 Agent 双重限制 Ping 任务频率，最小间隔为 30 秒。
 - 保留机器管理、离线通知、负载/流量通知、延迟检查和数据记录等原版维护功能。
 - 内置 `default` 与 `/admin` 均使用 [icelee123/komari-web125](https://github.com/icelee123/komari-web125) 的修改版前端，并已移除远控相关页面和入口。
-- 不再内置 `komari-next-main` 主题，默认主题为 Komari 官方前端裁剪版，主题 `short` 为 `default`。
 
 ## 构建
 
