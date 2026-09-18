@@ -1,0 +1,57 @@
+name: Build frontend theme
+description: Clone komari-web, build the default theme, and optionally upload it as an artifact.
+
+inputs:
+  node-version:
+    description: Node.js version used to build komari-web.
+    default: "23"
+  repository:
+    description: komari-web repository URL.
+    default: https://github.com/icelee123/komari-web125
+  artifact-name:
+    description: Optional artifact name for the packed frontend theme.
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Clone and build frontend
+      shell: bash
+      run: |
+        set -euxo pipefail
+        rm -rf komari-web
+        git clone --depth=1 "${{ inputs.repository }}" komari-web
+        cd komari-web
+        npm ci
+        npm run build
+        cd ..
+
+        for theme_dir in web/public/defaultTheme web/public/adminTheme; do
+          mkdir -p "${theme_dir}/dist"
+          rm -rf "${theme_dir}/dist"/*
+          cp -r komari-web/dist/* "${theme_dir}/dist/"
+          cp -f komari-web/komari-theme.json "${theme_dir}/"
+          if [ -f komari-web/preview.png ]; then cp -f komari-web/preview.png "${theme_dir}/"; fi
+          if [ -f komari-web/perview.png ]; then cp -f komari-web/perview.png "${theme_dir}/"; fi
+          if [ -f "${theme_dir}/preview.png" ] && [ ! -f "${theme_dir}/perview.png" ]; then cp -f "${theme_dir}/preview.png" "${theme_dir}/perview.png"; fi
+          if [ -f "${theme_dir}/perview.png" ] && [ ! -f "${theme_dir}/preview.png" ]; then cp -f "${theme_dir}/perview.png" "${theme_dir}/preview.png"; fi
+        done
+
+    - name: Pack frontend artifact
+      if: ${{ inputs.artifact-name != '' }}
+      shell: bash
+      run: |
+        set -euxo pipefail
+        tar -czf "$RUNNER_TEMP/${{ inputs.artifact-name }}.tar.gz" -C web/public defaultTheme adminTheme
+
+    - name: Upload frontend artifact
+      if: ${{ inputs.artifact-name != '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ runner.temp }}/${{ inputs.artifact-name }}.tar.gz
